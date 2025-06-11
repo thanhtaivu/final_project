@@ -1,0 +1,17 @@
+Same structure
+
+
+Group1:
+Lastfile-77f7b1cb-4ef0-4680-8e08-00718ebc7cfa.csv (English)
+Lastfile-d4c02950-f0c7-4e0b-84ee-24f623d7f233.csv (German)
+Lastfile-e0c5fecf-624b-46ef-b3ce-9598a44450da.csv (German)
+Lastfile-e6ffcbcf-b62a-4c3c-8412-47be2efdbe00.csv (English)
+
+
+
+
+
+
+Group 2:
+Lastfile-157b8940-f754-4241-8469-b38cd8b172b9.csv
+Lastfile-173c1daa-0472-44b5-bcf9-8431d2d1d969.csv
