@@ -107,7 +107,7 @@ def main():
         print(f"Tyres file created: {tyres_file} ({len(tyres_df)} records)")
     
     # filter rims
-    rim_article = master_df['article_type'].str.upper().fillna('') == 'FELGEN'
+    rim_article = master_df['article_type'].fillna('').str.upper().str.contains('FEL')
     rim_product = master_df['product_id'].str.upper().fillna('').str.startswith(('RIM', 'FELGE'))
     rims_mask = rim_article | rim_product
 
