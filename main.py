@@ -81,6 +81,7 @@ def main():
     
     # merge EAN and product_id
     master_df = all_data.groupby(['ean', 'product_id'], as_index=False).first()
+    master_df['provider'] = 'provider ' + master_df['source_file'].str.replace('.csv', '', regex=False)
     master_df = master_df.sort_values('ean')
     
 
@@ -89,8 +90,7 @@ def main():
     # create tyres and rims files
     tyres_file = os.path.join(RESULT_DIR, 'tyres.csv')
     rims_file = os.path.join(RESULT_DIR, 'rims.csv')
-    
-    base_columns = ['ean', 'product_id', 'manufacturer', 'article_type', 'source_file']
+    base_columns = ['ean', 'product_id', 'manufacturer', 'article_type','provider']
     
     # filter tyres
     tyre_article = master_df['article_type'].fillna('').str.upper().str.contains('REIFEN')
@@ -117,19 +117,24 @@ def main():
         rims_df.to_csv(rims_file, index=False)
 
     # filter by providers
-    tyres_df['provider'] = tyres_df['source_file'].str.replace('.csv', '', regex=False)
-    rims_df['provider'] = rims_df['source_file'].str.replace('.csv', '', regex=False)
     tyre_providers = set(tyres_df['provider'].unique())
     rim_providers = set(rims_df['provider'].unique())
     valid_providers = tyre_providers & rim_providers
 
     for provider in sorted(valid_providers):
+        tyre_providers = set(tyres_df['provider'].unique())
+        rim_providers = set(rims_df['provider'].unique())
+        providers_mask = tyre_providers & rim_providers
+
+    for provider in sorted(providers_mask):
         tyre_subset = tyres_df[tyres_df['provider'] == provider]
         rim_subset = rims_df[rims_df['provider'] == provider]
     
         combined = pd.concat([tyre_subset, rim_subset], ignore_index=True)
-        provider_file = os.path.join(RESULT_DIR, f'provider_{provider}_tyres_rims.csv')
+        provider_file = os.path.join(RESULT_DIR, f'{provider}_tyres_rims.csv')
         combined.to_csv(provider_file, index=False)
+        print(f"Created: {provider_file} ({len(combined)} records)")
+
 
     
     conn.close()
