@@ -118,6 +118,23 @@ def main():
         rims_df = rims_df[final_rim_columns]
         rims_df.to_csv(rims_file, index=False)
         print(f"Rims file created: {rims_file} ({len(rims_df)} records)")
+
+    # filter by providers
+    tyres_df['provider'] = tyres_df['source_file'].str.replace('.csv', '', regex=False)
+    rims_df['provider'] = rims_df['source_file'].str.replace('.csv', '', regex=False)
+    tyre_providers = set(tyres_df['provider'].unique())
+    rim_providers = set(rims_df['provider'].unique())
+    valid_providers = tyre_providers & rim_providers
+
+    for provider in sorted(valid_providers):
+        tyre_subset = tyres_df[tyres_df['provider'] == provider]
+        rim_subset = rims_df[rims_df['provider'] == provider]
+    
+        combined = pd.concat([tyre_subset, rim_subset], ignore_index=True)
+        provider_file = os.path.join(RESULT_DIR, f'provider_{provider}_tyres_rims.csv')
+        combined.to_csv(provider_file, index=False)
+        print(f"✅ Created: {provider_file} ({len(combined)} records)")
+
     
     conn.close()
     
