@@ -16,11 +16,6 @@ def setup_environment():
 def get_csv_files():
     return [f for f in os.listdir(DATA_DIR) if f.endswith('.csv')]
 
-def table_exists(conn, table_name):
-    cursor = conn.cursor()
-    cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}'")
-    return cursor.fetchone() is not None
-
 def clean_column_name(col):
     return str(col).strip().lower().replace(' ', '_')
 
@@ -28,97 +23,106 @@ def main():
     setup_environment()
     conn = sqlite3.connect(DB_FILE)
 
-
+    # setup the format file with 09.csv
     try:
         format_df = pd.read_csv(os.path.join(DATA_DIR, FORMAT_FILE), dtype=str, nrows=1)
         format_columns = [clean_column_name(col) for col in format_df.columns]
+        print(f"Using format from {FORMAT_FILE}")
     except Exception as e:
-        print(f"Error reading file '{FORMAT_FILE}'")
+        print(f"Error reading {FORMAT_FILE}: {e}")
         return
 
+    # create database table
     db_columns = ', '.join([f'"{col}" TEXT' for col in format_columns])
-    conn.execute(f"CREATE TABLE products ({db_columns})")
+    conn.execute(f"CREATE TABLE products ({db_columns}, source_file TEXT)")
     
-    #import data from csv files
+    print("Importing data...")
+    
+    # import csv files
     for filename in get_csv_files():
         try:
-            chunk_iterator = pd.read_csv(
-                os.path.join(DATA_DIR, filename),
-                dtype=str,
-                chunksize=50000,
-                on_bad_lines='skip'
-            )
-
-            for chunk in chunk_iterator:
+            for chunk in pd.read_csv(os.path.join(DATA_DIR, filename), dtype=str, chunksize=50000, on_bad_lines='skip'):
                 chunk.columns = [clean_column_name(col) for col in chunk.columns]
                 
                 if 'ean' not in chunk.columns:
                     continue
 
-                # chossing ean having 13 characters
-                chunk_filtered_ean = chunk[chunk['ean'].str.len() == 13].copy()
+                valid_eans = (chunk['ean'].str.len() == 13) & (chunk['ean'].str.isdigit())
+                chunk_filtered = chunk[valid_eans].copy()
 
-                if chunk_filtered_ean.empty:
+                if chunk_filtered.empty:
                     continue
                 
-                chunk_final = chunk_filtered_ean.reindex(columns=format_columns)
+
+                chunk_final = chunk_filtered.reindex(columns=format_columns)
+                chunk_final['source_file'] = filename
                 
                 chunk_final.to_sql('products', conn, if_exists='append', index=False)
 
+            print(f"Imported {filename}")
 
         except Exception as e:
-            print(f"ERROR file {filename}")
+            print(f"Error with {filename}: {e}")
 
-    #merge files
+    #merging processes
+
     try:
-        combined_df = pd.read_sql('SELECT * FROM products', conn)
+        all_data = pd.read_sql('SELECT * FROM products', conn)
     except Exception as e:
-        print(f"ERROR reading: {e}")
+        print(f"Error reading database: {e}")
         conn.close()
         return
 
-
-    if 'product_id' not in combined_df.columns:
-        combined_df['product_id'] = 'N/A'
+    # check product_id
+    if 'product_id' not in all_data.columns:
+        all_data['product_id'] = 'N/A'
     else:
-        combined_df['product_id'] = combined_df['product_id'].fillna('N/A')
+        all_data['product_id'] = all_data['product_id'].fillna('N/A')
     
-    master_df = combined_df.groupby(['ean', 'product_id'], as_index=False).first()
+    # merge EAN and product_id
+    master_df = all_data.groupby(['ean', 'product_id'], as_index=False).first()
     master_df = master_df.sort_values('ean')
+    
+
     master_df.to_csv(MASTER_FILE, index=False)
-    print(f"master view created")
+    print(f"Created master data")
     
     # create tyres and rims files
     tyres_file = os.path.join(RESULT_DIR, 'tyres.csv')
     rims_file = os.path.join(RESULT_DIR, 'rims.csv')
     
-    base_columns = ['ean', 'product_id', 'manufacturer']
+    base_columns = ['ean', 'product_id', 'manufacturer', 'article_type', 'source_file']
     
     # filter tyres
-    tyre_columns = [col for col in master_df.columns if 'tyre' in col]
-    if tyre_columns:
-        tyre_mask = master_df[tyre_columns].notnull().any(axis=1)
-        tyres_df = master_df.loc[tyre_mask].copy()
-        final_tyre_columns = [col for col in base_columns if col in tyres_df.columns] + tyre_columns
+    tyre_article = master_df['article_type'].str.upper().fillna('') == 'REIFEN'
+    tyre_product = master_df['product_id'].str.upper().fillna('').str.startswith(('TYRE', 'REIFEN'))
+    tyres_mask = tyre_article | tyre_product
+
+    if tyres_mask.any():
+        tyres_df = master_df[tyres_mask].copy()
+        tyre_columns = [col for col in master_df.columns if 'tyre' in col or 'reifen' in col]
+        final_tyre_columns = list(dict.fromkeys(base_columns + tyre_columns))
         tyres_df = tyres_df[final_tyre_columns]
         tyres_df.to_csv(tyres_file, index=False)
-        print(f"typers view created")
-    else:
-        print("ERROR tyres")
+        print(f"Tyres file created: {tyres_file} ({len(tyres_df)} records)")
     
-    # filter rims 
-    rim_columns = [col for col in master_df.columns if 'rim' in col]
-    if rim_columns:
-        rim_mask = master_df[rim_columns].notnull().any(axis=1)
-        rims_df = master_df.loc[rim_mask].copy()
-        final_rim_columns = [col for col in base_columns if col in rims_df.columns] + rim_columns
+    # filter rims
+    rim_article = master_df['article_type'].str.upper().fillna('') == 'FELGEN'
+    rim_product = master_df['product_id'].str.upper().fillna('').str.startswith(('RIM', 'FELGE'))
+    rims_mask = rim_article | rim_product
+
+    if rims_mask.any():
+        rims_df = master_df[rims_mask].copy()
+        rim_columns = [col for col in master_df.columns if 'rim' in col or 'felge' in col]
+        final_rim_columns = list(dict.fromkeys(base_columns + rim_columns))
         rims_df = rims_df[final_rim_columns]
         rims_df.to_csv(rims_file, index=False)
-        print(f"rims view created")
-    else:
-        print("ERROR rims")
+        print(f"Rims file created: {rims_file} ({len(rims_df)} records)")
     
     conn.close()
+    
+    print(f"Process complete! Files ready in {RESULT_DIR}")
+    print(f"Total records: {len(master_df)}")
 
 if __name__ == '__main__':
     main() 
