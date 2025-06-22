@@ -85,7 +85,6 @@ def main():
     
 
     master_df.to_csv(MASTER_FILE, index=False)
-    print(f"Created master data")
     
     # create tyres and rims files
     tyres_file = os.path.join(RESULT_DIR, 'tyres.csv')
@@ -94,7 +93,7 @@ def main():
     base_columns = ['ean', 'product_id', 'manufacturer', 'article_type', 'source_file']
     
     # filter tyres
-    tyre_article = master_df['article_type'].str.upper().fillna('') == 'REIFEN'
+    tyre_article = master_df['article_type'].fillna('').str.upper().str.contains('REIFEN')
     tyre_product = master_df['product_id'].str.upper().fillna('').str.startswith(('TYRE', 'REIFEN'))
     tyres_mask = tyre_article | tyre_product
 
@@ -104,7 +103,6 @@ def main():
         final_tyre_columns = list(dict.fromkeys(base_columns + tyre_columns))
         tyres_df = tyres_df[final_tyre_columns]
         tyres_df.to_csv(tyres_file, index=False)
-        print(f"Tyres file created: {tyres_file} ({len(tyres_df)} records)")
     
     # filter rims
     rim_article = master_df['article_type'].fillna('').str.upper().str.contains('FEL')
@@ -117,7 +115,6 @@ def main():
         final_rim_columns = list(dict.fromkeys(base_columns + rim_columns))
         rims_df = rims_df[final_rim_columns]
         rims_df.to_csv(rims_file, index=False)
-        print(f"Rims file created: {rims_file} ({len(rims_df)} records)")
 
     # filter by providers
     tyres_df['provider'] = tyres_df['source_file'].str.replace('.csv', '', regex=False)
@@ -137,8 +134,7 @@ def main():
     
     conn.close()
     
-    print(f"Process complete! Files ready in {RESULT_DIR}")
-    print(f"Total records: {len(master_df)}")
+    print(f"Done! Results files ready in {RESULT_DIR}")
 
 if __name__ == '__main__':
     main() 
