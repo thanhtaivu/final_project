@@ -133,7 +133,6 @@ def main():
         combined = pd.concat([tyre_subset, rim_subset], ignore_index=True)
         provider_file = os.path.join(RESULT_DIR, f'provider_{provider}_tyres_rims.csv')
         combined.to_csv(provider_file, index=False)
-        print(f"✅ Created: {provider_file} ({len(combined)} records)")
 
     
     conn.close()
