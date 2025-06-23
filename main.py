@@ -11,7 +11,7 @@ FORMAT_FILE = '09.csv'                                                          
 
 def setup_environment():
     os.makedirs(RESULT_DIR, exist_ok=True)                                           # to create the "result" directory if it doesn’t exist.
-    if os.path.exists(DB_FILE):                                                      # if the old database file already exists, removes the old database file (staging.db) to start fresh each time the script runs
+    if os.path.exists(DB_FILE):                                                      # if the old database file already exists, remove the old database file (staging.db) to start fresh each time the script runs
         os.remove(DB_FILE)
 
 def get_csv_files():                                                                 # to return a list of all .csv files in the current directory and exclude other types
