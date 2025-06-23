@@ -1,35 +1,36 @@
-import os
-import pandas as pd
-import sqlite3
+#import relevant library      
+import os                                                                            # os for file and directory operations
+import pandas as pd                                                                  # pandas for reading, cleaning, manipulating, and writing tabular data
+import sqlite3                                                                       # sqlite3 for SQLite database to store and process structured data efficiently
 
-DATA_DIR = '.'
-RESULT_DIR = 'result'
-DB_FILE = os.path.join(RESULT_DIR, 'staging.db')
-MASTER_FILE = os.path.join(RESULT_DIR, 'master_data.csv')
-FORMAT_FILE = '09.csv'
+DATA_DIR = '.'                                                                       # to specify where input CSV files are stored.
+RESULT_DIR = 'result'                                                                # to specify directory where the output (cleaned data, reports) will be saved
+DB_FILE = os.path.join(RESULT_DIR, 'staging.db')                                     # SQLite database file to temporarily store data from multiple CSVs
+MASTER_FILE = os.path.join(RESULT_DIR, 'master_data.csv')                            # the final cleaned and deduplicated data to be saved as a file named "master_data.csv" for easily fitering 
+FORMAT_FILE = '09.csv'                                                               # to specify file 09.csv as reference CSV file containing the structure used for cleaning and standardizing all files
 
 def setup_environment():
-    os.makedirs(RESULT_DIR, exist_ok=True)
-    if os.path.exists(DB_FILE):
+    os.makedirs(RESULT_DIR, exist_ok=True)                                           # to create the "result" directory if it doesn’t exist.
+    if os.path.exists(DB_FILE):                                                      # if the old database file already exists, removes the old database file (staging.db) to start fresh each time the script runs
         os.remove(DB_FILE)
 
-def get_csv_files():
+def get_csv_files():                                                                 # to return a list of all .csv files in the current directory and exclude other types
     return [f for f in os.listdir(DATA_DIR) if f.endswith('.csv')]
 
-def clean_column_name(col):
+def clean_column_name(col):                                                           # to standardize the column names: stripping whitespace, converting to lowercase, replacing spaces with underscores
     return str(col).strip().lower().replace(' ', '_')
 
-def main():
+def main():                                                                           # to setup a environment and connect to the SQLite database
     setup_environment()
     conn = sqlite3.connect(DB_FILE)
 
     # setup the format file with 09.csv
     try:
-        format_df = pd.read_csv(os.path.join(DATA_DIR, FORMAT_FILE), dtype=str, nrows=1)
-        format_columns = [clean_column_name(col) for col in format_df.columns]
+        format_df = pd.read_csv(os.path.join(DATA_DIR, FORMAT_FILE), dtype=str, nrows=1)                   # to read only the header row of 09.csv to capture the column names
+        format_columns = [clean_column_name(col) for col in format_df.columns]                             # the column names of 09.csv are standardized and saved to format_columns
         print(f"Using format from {FORMAT_FILE}")
     except Exception as e:
-        print(f"Error reading {FORMAT_FILE}: {e}")
+        print(f"Error reading {FORMAT_FILE}: {e}")                                                          # to return an error if it fails
         return
 
     # create database table
@@ -41,13 +42,13 @@ def main():
     # import csv files
     for filename in get_csv_files():
         try:
-            for chunk in pd.read_csv(os.path.join(DATA_DIR, filename), dtype=str, chunksize=50000, on_bad_lines='skip'):
+            for chunk in pd.read_csv(os.path.join(DATA_DIR, filename), dtype=str, chunksize=50000, on_bad_lines='skip'):                                # to read each file in chunks of 50,000 rows to save memory
                 chunk.columns = [clean_column_name(col) for col in chunk.columns]
                 
                 if 'ean' not in chunk.columns:
                     continue
 
-                valid_eans = (chunk['ean'].str.len() == 13) & (chunk['ean'].str.isdigit())
+                valid_eans = (chunk['ean'].str.len() == 13) & (chunk['ean'].str.isdigit())                                                              # to filter the rows with EAN 13 numeric characters and copy to new dataframe
                 chunk_filtered = chunk[valid_eans].copy()
 
                 if chunk_filtered.empty:
