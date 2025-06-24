@@ -146,7 +146,7 @@ def main():                                                                     
     
     conn.close()
     
-    print(f"Done! Results files ready in {RESULT_DIR}")
+    print(f"Done! Results files in {RESULT_DIR}")
 
 if __name__ == '__main__':
     main() 
