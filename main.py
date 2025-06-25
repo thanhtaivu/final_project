@@ -30,7 +30,7 @@ def main():                                                                     
         format_columns = [clean_column_name(col) for col in format_df.columns]                             # the column names of 09.csv are standardized and saved to format_columns
         print(f"Using format from {FORMAT_FILE}")
     except Exception as e:
-        print(f"Error reading {FORMAT_FILE}: {e}")                                                          # to return an error if it fails
+        print(f"Error reading {FORMAT_FILE}: {e}")                                                         # to return an error if it fails
         return
 
     # create database table
@@ -70,8 +70,8 @@ def main():                                                                     
         except Exception as e:
             print(f"Error with {filename}: {e}")
 
-    #merging processes
-
+    
+    # read all data from the database
     try:
         all_data = pd.read_sql('SELECT * FROM products', conn)                                                  #read all data and store it in a all_data DataFrame
     except Exception as e:
