@@ -1,9 +1,8 @@
-#import relevant library      
 import os                                                                            # os for file and directory operations
 import pandas as pd                                                                  # pandas for reading, cleaning, manipulating, and writing tabular data
 import sqlite3                                                                       # sqlite3 for SQLite database to store and process structured data efficiently
 
-DATA_DIR = '.'                                                                       # to specify where input CSV files are stored.
+DATA_DIR = 'resource_files'                                                          # to specify where input CSV files are stored.
 RESULT_DIR = 'result'                                                                # to specify directory where the output (cleaned data, reports) will be saved
 DB_FILE = os.path.join(RESULT_DIR, 'staging.db')                                     # SQLite database file to temporarily store data from multiple CSVs
 MASTER_FILE = os.path.join(RESULT_DIR, 'master_data.csv')                            # the final cleaned and deduplicated data to be saved as a file named "master_data.csv" for easily fitering 
