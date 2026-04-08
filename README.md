@@ -2,7 +2,7 @@
 
 This Python project script multiple CSV files, clean and normalizes the data based in a reference CSV files, and create a master dataset along with filterd subsets for tyres and rims. It also generate provider-specific CSV files. The script uses pandas for data handling and SQLite for temporary storage of the data
 
-Collaboration with (trucnguyenlethanh)[https://github.com/trucnguyenlethanh]
+Collaboration with !(trucnguyenlethanh)[https://github.com/trucnguyenlethanh]
 
 ## Requirements
 - pandas library
