@@ -1,6 +1,6 @@
-# CSV Data Cleaning and Consolidation
+# Tyre Data Cleaning and Consolidation
 
-This Python project script multiple CSV files, clean and normalizes the data based in a reference CSV files, and create a master dataset along with filterd subsets for tyres and rims. It also generate provider-specific CSV files. The script uses pandas for data handling and SQLite for temporary storage of the data
+This Python project scripts multiple CSV files, cleans and normalizes the data based on a reference CSV files, and creates a master dataset along with filtered subsets for tyres and rims. It also generates provider-specific CSV files. The script uses pandas for data handling and SQLite for temporary storage of the data
 
 Collaboration with ![trucnguyenlethanh](https://github.com/trucnguyenlethanh)
 
