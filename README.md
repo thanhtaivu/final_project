@@ -1,4 +1,5 @@
 # Tyre Data Cleaning and Consolidation
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white) ![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white) ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
 
 This Python project scripts multiple CSV files, cleans and normalizes the data based on a reference CSV files, and creates a master dataset along with filtered subsets for tyres and rims. It also generates provider-specific CSV files. The script uses pandas for data handling and SQLite for temporary storage of the data
 
